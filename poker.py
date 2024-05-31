@@ -7,7 +7,7 @@ debug_symbols = {
     "S": "♠",
     "H": "♥",
     "D": "♦",
-    "C": "♣",
+    "C": "♣", 
 }
 
 class Card():
