@@ -1,6 +1,9 @@
 import os
+import sys
 import random
-from collections import defaultdict 
+import pygame
+from pygame.locals import QUIT
+from itertools import combinations 
 
 
 debug_symbols = {
@@ -14,6 +17,7 @@ class Card():
     def __init__(self, value, suit):
         self.value = value
         self.suit = suit
+        self.raw = str(self.value + debug_symbols[self.suit])
 
     def debug_self(self):
         print(self.value + debug_symbols[self.suit], end = ' ')
@@ -46,7 +50,7 @@ full_deck = make_deck()
 def calculate_hand(hand):
     global value_list, hand_values
     card_count = {}
-    suit_count = {}
+    suit_count = set()
     arr_rep = [0 for card in value_list]
     for card in hand:
 
@@ -55,12 +59,9 @@ def calculate_hand(hand):
         else:
             card_count[card.value] = 1
 
-        if card.suit in suit_count:
-            suit_count[card.suit] += 1
-        else:
-            suit_count[card.suit] = 1
+        suit_count.add(card.suit)
     # Flush Check
-    flush = True if suit_count == 1 else False
+    flush = True if len(suit_count) == 1 else False
 
     # Straight Check
     straight = False
@@ -96,38 +97,114 @@ def calculate_hand(hand):
         return [2, straight_high]
     # Quad, then kicker
     if quads:
-        return [3, arr_rep.find(4), arr_rep.find(1)]
+        return [3]
     # Trip, then Doub
     if trips == 1 and pairs == 1:
-        return [4, arr_rep.find(3), arr_rep.find(2)]
-    # 
+        return [4]
+    # Hand Sorted
+    if flush:
+        temp_lst = sorted([value_list.index(card.value) for card in hand], reverse=True)
+        fin = [5] + temp_lst
+        return fin
+    # High Card
+    if straight:
+        return [6, straight_high]
+    # Trips, Rest
+    if trips == 1:
+        return [7]
+        tmp_list = [7, arr_rep.find(3)]
+    # Doub, Doub, Rest
+    if pairs == 2:
+        return [8]
+    # Doub, Rest
+    if pairs == 1:
+        return [9]
+    else:
+        return [10]
     
-
-        
-    
-
 def play_hand():
+    def debug_round(river, hand):
+        # Print River Hand Terminal :3
+        for card in river:
+            card.debug_self()
+        print()
+        for card in hand:
+            card.debug_self()
+        print()
+
+
     round_deck = full_deck.copy()
 
     river = random.sample(round_deck, 5)
     for card in river:
-        card.debug_self()
         round_deck.remove(card)
-    print()
 
     hand = random.sample(round_deck, 2)
     for card in hand:
-        card.debug_self()
         round_deck.remove(card)
-    print()
 
-    calculate_hand(river)
+    best = 10
+    full_hand = hand + river
+    #TODO Use itertools smh
+    combinations_of_5 = combinations(full_hand, 5)
+    for combo in combinations_of_5:
+        best = min(calculate_hand(combo)[0], best)
 
-    print()
+    # best = calculate_hand(river)
+    
+    debug_round(river, hand)
+    print(f"BEST: {best}.")
 
 
 for x in range(1):
     play_hand()
-    
 
-            
+
+# ------------------- {Pygame}
+
+pygame.init()
+# Set screen size
+screen_size = [600, 600]
+screen_w = screen_size[0]
+screen_h = screen_size[1]
+screen = pygame.display.set_mode(screen_size)
+# Set the window title
+pygame.display.set_caption('')
+
+# Define colors
+RED = (255, 0, 0)
+GREEN = (0, 255, 0)
+BLUE = (0, 0, 255)
+WHITE = (245, 245, 245)
+BLACK = (0, 0, 0)
+
+DARK_GREEN = (0, 128, 0)
+YELLOW = (255, 255, 0)
+ORANGE = (255, 165, 0)
+NAVY = (133, 33, 255)
+BROWN = (97, 34, 2)
+TEAL = (74, 217, 193)
+PINK = (255, 33, 222)
+PURPLE = (160, 32, 240)
+MAROON = (128, 0, 0)
+LIGHT_GRAY = (200, 200, 200)
+GRAY = (100, 100, 100)
+DARK_GRAY = (20, 20, 20)
+
+running = True
+
+clock = pygame.time.Clock()
+FPS = 1000
+currentFPS = 0
+while running:
+    clock.tick(FPS)
+    
+    for event in pygame.event.get():
+        if event.type == QUIT:
+            pygame.quit()
+            sys.exit()
+
+    if round(clock.get_fps()) != currentFPS:
+        # Update window title with current FPS
+        pygame.display.set_caption(f'FPS: {round(clock.get_fps())}')
+        currentFPS = round(clock.get_fps())
