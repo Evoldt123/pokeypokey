@@ -4,8 +4,53 @@ import random
 import pygame
 from pygame.locals import QUIT
 from itertools import combinations 
+import threading
+import time
 
 print()
+
+pygame.init()
+
+# ------------------- {Pygame}
+
+game_state = 0
+
+pygame.init()
+# Set screen size
+screen_size = [1000, 640]
+screen_w = screen_size[0]
+screen_h = screen_size[1]
+screen = pygame.display.set_mode(screen_size)
+# Set the window title
+pygame.display.set_caption('')
+
+game_loop = True
+
+clock = pygame.time.Clock()
+FPS = 1000
+currentFPS = 0
+
+card_font = pygame.font.SysFont('segoeuiblack', 40)
+# Define colors
+RED = (255, 0, 0)
+GREEN = (0, 128, 0)
+BLUE = (0, 0, 255)
+WHITE = (245, 245, 245)
+BLACK = (0, 0, 0)
+
+LIGHT_BLUE = (127, 183, 240)
+DARK_GREEN = (0, 50, 0)
+YELLOW = (255, 255, 0)
+ORANGE = (255, 165, 0)
+NAVY = (133, 33, 255)
+BROWN = (97, 34, 2)
+TEAL = (74, 217, 193)
+PINK = (255, 33, 222)
+PURPLE = (160, 32, 240)
+MAROON = (128, 0, 0)
+LIGHT_GRAY = (200, 200, 200)
+GRAY = (100, 100, 100)
+DARK_GRAY = (20, 20, 20)
 
 debug_symbols = {
     "S": "♠",
@@ -16,9 +61,30 @@ debug_symbols = {
 
 class Card():
     def __init__(self, value, suit):
+        super().__init__()
         self.value = value
         self.suit = suit
         self.raw = str(self.value + debug_symbols[self.suit])
+
+        
+
+        # Visuals
+        self.image = pygame.Surface([60, 90])
+        self.image.fill(WHITE)
+
+        self.rect = self.image.get_rect()
+        self.rect.x = 450
+        self.rect.y = 300
+         
+    def draw(self):
+        white_bg = pygame.Rect(self.rect.x, self.rect.y, 60, 90)
+        pygame.draw.rect(screen, WHITE, white_bg, 0, 10)
+        
+        card_text = card_font.render(str(self.value), True, RED)
+        card_text_rect = card_text.get_rect(center=(white_bg.center))
+
+        screen.blit(card_text, (card_text_rect))
+        
 
     def debug_self(self):
         print(self.value + debug_symbols[self.suit], end = ' ')
@@ -123,6 +189,25 @@ def calculate_hand(hand):
         return [1]
     
 def play_hand():
+    global currentFPS
+    clock.tick(FPS)
+    
+    for event in pygame.event.get():
+        if event.type == QUIT:
+            pygame.quit()
+            sys.exit()
+
+    if round(clock.get_fps()) != currentFPS:
+        # Update window title with current FPS
+        pygame.display.set_caption(f'FPS: {round(clock.get_fps())}')
+        currentFPS = round(clock.get_fps())
+
+    screen.fill(LIGHT_BLUE)
+
+    # background("images\\bricked.jpg")
+    draw_poker_table()
+
+
     def debug_round(river, hand):
         # Print River Hand Terminal :3
         for card in river:
@@ -155,48 +240,39 @@ def play_hand():
     debug_round(river, hand)
     print(f"BEST: {hand_values[best]}.")
 
+    card.draw()
+    pygame.display.update()
+    
 
-for x in range(1):
-    play_hand()
 
 
-# ------------------- {Pygame}
 
-pygame.init()
-# Set screen size
-screen_size = [1000, 800]
-screen_w = screen_size[0]
-screen_h = screen_size[1]
-screen = pygame.display.set_mode(screen_size)
-# Set the window title
-pygame.display.set_caption('')
 
-# Define colors
-RED = (255, 0, 0)
-GREEN = (0, 255, 0)
-BLUE = (0, 0, 255)
-WHITE = (245, 245, 245)
-BLACK = (0, 0, 0)
-
-LIGHT_BLUE = (127, 183, 240)
-DARK_GREEN = (0, 128, 0)
-YELLOW = (255, 255, 0)
-ORANGE = (255, 165, 0)
-NAVY = (133, 33, 255)
-BROWN = (97, 34, 2)
-TEAL = (74, 217, 193)
-PINK = (255, 33, 222)
-PURPLE = (160, 32, 240)
-MAROON = (128, 0, 0)
-LIGHT_GRAY = (200, 200, 200)
-GRAY = (100, 100, 100)
-DARK_GRAY = (20, 20, 20)
 
 running = True
 
-clock = pygame.time.Clock()
-FPS = 1000
-currentFPS = 0
+# --------------------------- Funky Functions
+def background(image):
+  BG = pygame.transform.scale((pygame.image.load(image)),(screen_w, screen_h)).convert_alpha()
+  screen.blit(BG, (0, 0))
+
+def draw_poker_table():
+    # 1000 by 640, 500 and 320 - half dim
+    table_outline = pygame.Rect(100, 70, 800, 500)
+    table_shadow = pygame.Rect(130, 110, 800, 500)
+
+    pygame.draw.rect(screen, BROWN, table_shadow, 0, 200)
+    pygame.draw.rect(screen, DARK_GREEN, table_outline, 0, 200)
+    
+
+    table_inner = pygame.Rect(0, 0, 750, 450)
+    table_inner.center = table_outline.center
+    pygame.draw.rect(screen, GREEN, table_inner, 0, 200)
+
+    yellow_outline = pygame.Rect(0, 0, 650, 350)
+    yellow_outline.center = table_outline.center
+    pygame.draw.rect(screen, YELLOW, yellow_outline, 5, 200)
+
 while running:
     clock.tick(FPS)
     
@@ -210,7 +286,19 @@ while running:
         pygame.display.set_caption(f'FPS: {round(clock.get_fps())}')
         currentFPS = round(clock.get_fps())
 
-
-
     screen.fill(LIGHT_BLUE)
+
+
+    # background("images\\bricked.jpg")
+    draw_poker_table()
+
+    """
+    while game_loop == True:
+        game_thread = threading.Thread(target=play_hand)
+        game_thread.start()
+        game_loop = False
+    """
+
+    while game_state == 0:
+        play_hand()
     pygame.display.update()
