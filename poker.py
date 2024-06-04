@@ -6,31 +6,36 @@ from pygame.locals import QUIT
 from itertools import combinations 
 import threading
 import time
+from network import Network
 
-print()
-
+# Initialize pygame
 pygame.init()
 
 # ------------------- {Pygame}
 
+# Set up game state
 game_state = 0
 
-pygame.init()
 # Set screen size
 screen_size = [1000, 640]
 screen_w = screen_size[0]
 screen_h = screen_size[1]
 screen = pygame.display.set_mode(screen_size)
+
 # Set the window title
 pygame.display.set_caption('')
 
 game_loop = True
 
+# Set up clock for managing FPS
 clock = pygame.time.Clock()
 FPS = 1000
 currentFPS = 0
 
+# Set up fonts
 card_font = pygame.font.SysFont('segoeuiblack', 40)
+card_font_small = pygame.font.SysFont('segoeuiblack', 20)
+
 # Define colors
 RED = (255, 0, 0)
 GREEN = (0, 128, 0)
@@ -52,6 +57,7 @@ LIGHT_GRAY = (200, 200, 200)
 GRAY = (100, 100, 100)
 DARK_GRAY = (20, 20, 20)
 
+# Debug symbols for card suits
 debug_symbols = {
     "S": "♠",
     "H": "♥",
@@ -59,6 +65,10 @@ debug_symbols = {
     "C": "♣", 
 }
 
+# List to store cards to be drawn
+draw_these = []
+
+# Class representing a playing card
 class Card():
     def __init__(self, value, suit):
         super().__init__()
@@ -66,7 +76,12 @@ class Card():
         self.suit = suit
         self.raw = str(self.value + debug_symbols[self.suit])
 
-        
+        # Suit Colors
+        self.color = BLACK   
+        if self.suit in ['♦', '♥', 'D', 'H']:
+            self.color = RED
+        elif self.suit in ['♠', '♣', 'S', 'C']:
+            self.color = BLACK        
 
         # Visuals
         self.image = pygame.Surface([60, 90])
@@ -75,22 +90,37 @@ class Card():
         self.rect = self.image.get_rect()
         self.rect.x = 450
         self.rect.y = 300
+
+        self.visible = True
          
     def draw(self):
-        white_bg = pygame.Rect(self.rect.x, self.rect.y, 60, 90)
-        pygame.draw.rect(screen, WHITE, white_bg, 0, 10)
-        
-        card_text = card_font.render(str(self.value), True, RED)
-        card_text_rect = card_text.get_rect(center=(white_bg.center))
+        # Draw visible card
+        if self.visible:
+            white_bg = pygame.Rect(self.rect.x, self.rect.y, 60, 90)
+            pygame.draw.rect(screen, WHITE, white_bg, 0, 10)
+            
+            card_text = card_font.render(str(self.value), True, self.color)
+            card_text_rect = card_text.get_rect(center=(white_bg.center))
 
-        screen.blit(card_text, (card_text_rect))
+            suit_text = card_font_small.render(debug_symbols[self.suit], True, self.color)
+
+            screen.blit(card_text, (card_text_rect))
+            screen.blit(suit_text, (self.rect.x+5, self.rect.y+5))
+        
+        # Card backing
+        else:
+            red_bg = pygame.Rect(self.rect.x, self.rect.y, 60, 90)
+            pygame.draw.rect(screen, RED, red_bg, 0, 10)
         
 
     def debug_self(self):
-        print(self.value + debug_symbols[self.suit], end = ' ')
+        print(self.value + debug_symbols[self.suit], end=' ')
 
+# Possible card values and suits
 value_list = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"]
 suit_list = ["C", "H", "S", "D"]
+
+# Hand values for evaluating poker hands
 hand_values = {
     10: "Royal Flush",
     9: "Straight Flush",
@@ -104,32 +134,35 @@ hand_values = {
     1: "High Card"
 }
 
+# Function to create a standard deck of cards
 def make_deck():
     deck = []
     for value in value_list:
         for suit in suit_list:
-            deck.append( Card(value, suit) )
+            deck.append(Card(value, suit))
     return deck
 
+# Create a full deck
 full_deck = make_deck()
 
+# Function to calculate the value of a poker hand
 def calculate_hand(hand):
     global value_list, hand_values
     card_count = {}
     suit_count = set()
     arr_rep = [0 for card in value_list]
     for card in hand:
-
         if card.value in card_count:
             card_count[card.value] += 1
         else:
             card_count[card.value] = 1
 
         suit_count.add(card.suit)
-    # Flush Check
+
+    # Flush check
     flush = True if len(suit_count) == 1 else False
 
-    # Straight Check
+    # Straight check
     straight = False
     for key, val in card_count.items():
         arr_rep[value_list.index(key)] = val
@@ -154,69 +187,44 @@ def calculate_hand(hand):
     # (1) Royal Flush, (2) Straight Flush, (3) Quads, (4) Full House, (5) Flush
     # (6) Straight, (7) Trips, (8) Two Pair, (9) Pair, (10) High Card
 
-    # First num is hand type :P
-    # TRUMPS
+    # First num is hand type
+    # Royal Flush
     if straight and flush and arr_rep[-1] > 0:
         return [10] 
-    # High Card on Straight
+    # High Card on Straight Flush
     if straight and flush:
         return [9, straight_high]
-    # Quad, then kicker
+    # Four of a Kind
     if quads:
         return [8]
-    # Trip, then Doub
+    # Full House
     if trips == 1 and pairs == 1:
         return [7]
-    # Hand Sorted
+    # Flush
     if flush:
         temp_lst = sorted([value_list.index(card.value) for card in hand], reverse=True)
         fin = [6] + temp_lst
         return fin
-    # High Card
+    # Straight
     if straight:
         return [5, straight_high]
-    # Trips, Rest
+    # Three of a Kind
     if trips == 1:
         return [4]
-        tmp_list = [7, arr_rep.find(3)]
-    # Doub, Doub, Rest
+    # Two Pair
     if pairs == 2:
         return [3]
-    # Doub, Rest
+    # One Pair
     if pairs == 1:
         return [2]
     else:
         return [1]
-    
+
+# Function to play a hand of poker
 def play_hand():
     global currentFPS
+    global draw_these
     clock.tick(FPS)
-    
-    for event in pygame.event.get():
-        if event.type == QUIT:
-            pygame.quit()
-            sys.exit()
-
-    if round(clock.get_fps()) != currentFPS:
-        # Update window title with current FPS
-        pygame.display.set_caption(f'FPS: {round(clock.get_fps())}')
-        currentFPS = round(clock.get_fps())
-
-    screen.fill(LIGHT_BLUE)
-
-    # background("images\\bricked.jpg")
-    draw_poker_table()
-
-
-    def debug_round(river, hand):
-        # Print River Hand Terminal :3
-        for card in river:
-            card.debug_self()
-        print()
-        for card in hand:
-            card.debug_self()
-        print()
-
 
     round_deck = full_deck.copy()
 
@@ -235,44 +243,60 @@ def play_hand():
     for combo in combinations_of_5:
         best = max(calculate_hand(combo)[0], best)
 
-    # best = calculate_hand(river)
-    
-    debug_round(river, hand)
+    # Print out the best hand
+    for card in river:
+        card.debug_self()
+    print()
+    for card in hand:
+        card.debug_self()
     print(f"BEST: {hand_values[best]}.")
 
-    card.draw()
-    pygame.display.update()
-    
+    for i, card in enumerate(river):
+        draw_these.append(card)
+        card.rect.center = (340 + 80*i, 270)
+    for i, card in enumerate(hand):
+        draw_these.append(card)
+        card.rect.center = (465 + 70*i, 550)
 
-
-
-
-
-
+# Main game loop
 running = True
 
 # --------------------------- Funky Functions
-def background(image):
-  BG = pygame.transform.scale((pygame.image.load(image)),(screen_w, screen_h)).convert_alpha()
-  screen.blit(BG, (0, 0))
 
+# Function to set background image
+def background(image):
+    BG = pygame.transform.scale((pygame.image.load(image).convert_alpha()), (screen_w, screen_h)).convert_alpha()
+    screen.blit(BG, (0, 0))
+
+# Function to draw the poker table
 def draw_poker_table():
-    # 1000 by 640, 500 and 320 - half dim
+    # Draw table outline
     table_outline = pygame.Rect(100, 70, 800, 500)
     table_shadow = pygame.Rect(130, 110, 800, 500)
 
     pygame.draw.rect(screen, BROWN, table_shadow, 0, 200)
     pygame.draw.rect(screen, DARK_GREEN, table_outline, 0, 200)
     
-
+    # Draw table inner
     table_inner = pygame.Rect(0, 0, 750, 450)
     table_inner.center = table_outline.center
+
     pygame.draw.rect(screen, GREEN, table_inner, 0, 200)
 
+    # Draw yellow outline
     yellow_outline = pygame.Rect(0, 0, 650, 350)
     yellow_outline.center = table_outline.center
     pygame.draw.rect(screen, YELLOW, yellow_outline, 5, 200)
 
+    # Draw card outline
+    card_outline = pygame.Rect(0, 0, 70, 100)
+    for c in range(-2, 3):
+        card_outline.center = table_inner.center
+        card_outline.centerx += 80*c
+        card_outline.centery -= 50
+        pygame.draw.rect(screen, YELLOW, card_outline, 2, 15)
+n = Network()
+# Main game loop
 while running:
     clock.tick(FPS)
     
@@ -286,19 +310,27 @@ while running:
         pygame.display.set_caption(f'FPS: {round(clock.get_fps())}')
         currentFPS = round(clock.get_fps())
 
+    #if event.type == pygame.MOUSEBUTTONDOWN:
+        #n.send("ooga booga")
+
     screen.fill(LIGHT_BLUE)
 
+    # Draw background
+    background("images\\bricked.jpg")
 
-    # background("images\\bricked.jpg")
+    # Draw poker table
     draw_poker_table()
 
-    """
+    # Start the game loop
     while game_loop == True:
+        
         game_thread = threading.Thread(target=play_hand)
         game_thread.start()
         game_loop = False
-    """
+    
+    # Draw cards
+    for thing in draw_these:
+        thing.draw()
 
-    while game_state == 0:
-        play_hand()
+    # Update display
     pygame.display.update()

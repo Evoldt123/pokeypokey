@@ -2,7 +2,9 @@ import socket
 from _thread import *
 import sys
 
-server = "172.26.102.4"
+# 172.26.101.220 for laptop
+# 172.26.102.4 for PC? (confirm pls)
+server = "172.26.101.220"
 port = 5555
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
