@@ -5,8 +5,8 @@ class Network:
     def __init__(self):
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         # 172.26.101.220 for laptop
-        # 172.26.102.4 for PC? (confirm pls)
-        self.server = "172.26.99.204"
+        # 172.16.0.106 for PC
+        self.server = "172.16.0.106"
         self.port = 5555
         self.addr = (self.server, self.port)
         self.id = self.connect()
