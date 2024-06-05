@@ -4,7 +4,7 @@ import sys
 
 # 172.26.101.220 for laptop
 # 172.16.0.106 for PC
-server = "172.16.0.106"
+server = "129.222.194.173"
 port = 5555
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
