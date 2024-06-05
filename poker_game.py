@@ -264,8 +264,13 @@ running = True
 # --------------------------- Funky Functions
 
 # Function to set background image
-def background(image):
-    BG = pygame.transform.scale((pygame.image.load(image).convert_alpha()), (screen_w, screen_h)).convert_alpha()
+def make_bg(image):
+    return pygame.transform.scale((pygame.image.load(image).convert_alpha()), (screen_w, screen_h)).convert_alpha()
+
+BRICK_BG = make_bg("images\\bricked.jpg")
+
+def background(BG):
+    # BG = pygame.transform.scale((pygame.image.load(image).convert_alpha()), (screen_w, screen_h)).convert_alpha()
     screen.blit(BG, (0, 0))
 
 # Function to draw the poker table
@@ -295,7 +300,9 @@ def draw_poker_table():
         card_outline.centerx += 80*c
         card_outline.centery -= 50
         pygame.draw.rect(screen, YELLOW, card_outline, 2, 15)
+
 n = Network()
+
 # Main game loop
 while running:
     clock.tick(FPS)
@@ -310,20 +317,20 @@ while running:
         pygame.display.set_caption(f'FPS: {round(clock.get_fps())}')
         currentFPS = round(clock.get_fps())
 
-    #if event.type == pygame.MOUSEBUTTONDOWN:
-        #n.send("ooga booga")
+    if event.type == pygame.MOUSEBUTTONDOWN:
+        player = n.getP()
+        print("You are player", player)
 
     screen.fill(LIGHT_BLUE)
 
     # Draw background
-    background("images\\bricked.jpg")
+    background(BRICK_BG)
 
     # Draw poker table
     draw_poker_table()
 
     # Start the game loop
     while game_loop == True:
-        
         game_thread = threading.Thread(target=play_hand)
         game_thread.start()
         game_loop = False

@@ -4,7 +4,7 @@ import sys
 
 # 172.26.101.220 for laptop
 # 172.26.102.4 for PC? (confirm pls)
-server = "172.26.101.220"
+server = "172.26.99.204"
 port = 5555
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -17,9 +17,17 @@ except socket.error as e:
 s.listen(2)
 print("Waiting for a connection, Server Started")
 
+id_count = 0
+ids = [False for _ in range(6)]
 
-def threaded_client(conn):
-    conn.send(str.encode("Connected"))
+
+def threaded_client(conn, id):
+    global id_count
+    global ids
+    conn.send(str.encode(str(id)))
+
+    # print("Connected to:", addr)
+
     reply = ""
     while True:
         try:
@@ -37,12 +45,31 @@ def threaded_client(conn):
         except:
             break
 
-    print("Lost connection")
+    print(f"ID {id} // Lost connection")
+    id_count -= 1
+    ids[id] = False
+    print("IDs are now", ids)
     conn.close()
 
 
 while True:
     conn, addr = s.accept()
-    print("Connected to:", addr)
+    print("Connected to main:", addr)
+    # Find available IDs
+    new_id = -1
+    for x in range(6): # Six Players rn
+        if ids[x] == False:
+            new_id = x
+            id_count += 1
+            ids[x] = True
+            print(f"{addr} assigned ID {new_id}")
+            print("IDs are now", ids, '\n')
+            break
+    if new_id == -1:
+        print("Err: Probably max capacity")
+        pass
 
-    start_new_thread(threaded_client, (conn,))
+    else:
+        # print("Connected to:", addr)
+
+        start_new_thread(threaded_client, (conn, new_id))
