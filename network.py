@@ -6,8 +6,8 @@ class Network:
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         # 172.26.101.220 for laptop
         # 172.16.0.106 for PC
-        self.server = "tcp://0.tcp.ngrok.io:14425"
-        self.port = 14425
+        self.server = "25.63.113.238"
+        self.port = 5555
         self.addr = (self.server, self.port)
         self.id = self.connect()
         # print(self.id)
