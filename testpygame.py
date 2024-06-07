@@ -21,7 +21,7 @@ def test_thread():
     awaiting_response = True
 
 while True:
-
+    print(pygame.time.get_ticks())
     for event in pygame.event.get():
         if event.type == QUIT:
             pygame.quit()
