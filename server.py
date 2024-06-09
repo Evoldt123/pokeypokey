@@ -6,7 +6,7 @@ from poker_game import Game
 
 # 172.26.101.220 for laptop
 # 172.16.0.106 for PC
-server = "25.63.113.238"
+server = "192.168.1.175"
 port = 5555
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -42,7 +42,7 @@ def threaded_client(conn, id):
                 print("Disconnected")
                 break
             else:
-                print("Received: ", reply)
+                # print("Received: ", reply)
                 # print("Sending : ", reply)
 
                 conn.sendall(pickle.dumps(game[0]))
@@ -55,7 +55,8 @@ def threaded_client(conn, id):
         print("Game Popped")
         game.pop()
 
-    id_count -= 1
+    # id_count -= 1
+    game[0].players -= 1
     ids[id] = False
     print("IDs are now", ids)
     print()
@@ -70,7 +71,7 @@ while True:
     for x in range(7): # Six Players rn
         if ids[x] == False:
             new_id = x
-            id_count += 1
+            # id_count += 1
             ids[x] = True
             print(f"{addr} assigned ID {new_id}")
             print("IDs are now", ids, '\n')
@@ -82,7 +83,10 @@ while True:
 
     else:
         if new_id == 0:
-            game.append(Game())
+            game.append(Game(player_list=ids))
+        else:
+            game[0].player_list = ids
+            game[0].players += 1
         # print("Connected to:", addr)
 
         start_new_thread(threaded_client, (conn, new_id))

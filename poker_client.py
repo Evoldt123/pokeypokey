@@ -8,6 +8,7 @@ import threading
 import time
 from network import Network
 from poker_game import Game
+from card import Card
 
 # Initialize pygame
 pygame.init()
@@ -87,88 +88,25 @@ hand_values = {
     1: "High Card"
 }
 
-# Function to calculate the value of a poker hand
-def calculate_hand(hand):
-    global value_list, hand_values
-    card_count = {}
-    suit_count = set()
-    arr_rep = [0 for card in value_list]
-    for card in hand:
-        if card.value in card_count:
-            card_count[card.value] += 1
-        else:
-            card_count[card.value] = 1
-
-        suit_count.add(card.suit)
-
-    # Flush check
-    flush = True if len(suit_count) == 1 else False
-
-    # Straight check
-    straight = False
-    for key, val in card_count.items():
-        arr_rep[value_list.index(key)] = val
-
-    for x in range(len(arr_rep)-4):
-        sub = arr_rep[x:x+5]
-        if sub.count(0) == 0:
-            straight = True
-            straight_high = x+6
-
-    sub = arr_rep[:4]
-    sub.append(arr_rep[-1]) 
-    if sub.count(0) == 0:
-        straight = True
-        straight_high = 5
-
-    # Matches
-    pairs = arr_rep.count(2)
-    trips = arr_rep.count(3)
-    quads = arr_rep.count(4)
-
-    # (1) Royal Flush, (2) Straight Flush, (3) Quads, (4) Full House, (5) Flush
-    # (6) Straight, (7) Trips, (8) Two Pair, (9) Pair, (10) High Card
-
-    # First num is hand type
-    # Royal Flush
-    if straight and flush and arr_rep[-1] > 0:
-        return [10] 
-    # High Card on Straight Flush
-    if straight and flush:
-        return [9, straight_high]
-    # Four of a Kind
-    if quads:
-        return [8]
-    # Full House
-    if trips == 1 and pairs == 1:
-        return [7]
-    # Flush
-    if flush:
-        temp_lst = sorted([value_list.index(card.value) for card in hand], reverse=True)
-        fin = [6] + temp_lst
-        return fin
-    # Straight
-    if straight:
-        return [5, straight_high]
-    # Three of a Kind
-    if trips == 1:
-        return [4]
-    # Two Pair
-    if pairs == 2:
-        return [3]
-    # One Pair
-    if pairs == 1:
-        return [2]
-    else:
-        return [1]
-
 # Function to play a hand of poker
 def play_hand():
     global currentFPS
     global draw_these
     clock.tick(FPS)
-    player = n.getP()
+    player = int(n.getP())
 
+    """
+    for i, card in enumerate(game.river):
+        game_card = Card(card[0], card[1])
+        draw_these.append(game_card)
+        game_card.rect.center = (340 + 80*i, 270)
+
+    for i, card in enumerate(game.hands[player]):
+        game_card = Card(card[0], card[1])
+        draw_these.append(game_card)
+        game_card.rect.center = (465 + 70*i, 550)
+
+    """
     
     """
     best = 0
@@ -255,10 +193,13 @@ while running:
 
     if event.type == pygame.MOUSEBUTTONDOWN:
         player = n.getP()
-        print("You are player", player)
+        # game.test()
+        pygame.time.delay(3000)
+
+        print(f"There are {game.players} players")
 
     try:
-        game = n.send("boinga")
+        game = n.send("get_game")
         pass
     except:
         print("NO GAME NO GAME")
@@ -279,7 +220,7 @@ while running:
     
     # Draw cards
     for thing in draw_these:
-        thing.draw()
+        thing.draw(screen)
 
     # Update display
     pygame.display.update()

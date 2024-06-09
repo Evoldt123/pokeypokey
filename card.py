@@ -48,6 +48,7 @@ draw_these = []
 # Class representing a playing card
 class Card():
     def __init__(self, value, suit):
+        
         # self.screen = screen
         self.value = value
         self.suit = suit
@@ -74,20 +75,20 @@ class Card():
         # Draw visible card
         if self.visible:
             white_bg = pygame.Rect(self.rect.x, self.rect.y, 60, 90)
-            pygame.draw.rect(self.screen, WHITE, white_bg, 0, 10)
+            pygame.draw.rect(screen, WHITE, white_bg, 0, 10)
             
             card_text = card_font.render(str(self.value), True, self.color)
             card_text_rect = card_text.get_rect(center=(white_bg.center))
 
             suit_text = card_font_small.render(debug_symbols[self.suit], True, self.color)
 
-            self.screen.blit(card_text, (card_text_rect))
-            self.screen.blit(suit_text, (self.rect.x+5, self.rect.y+5))
+            screen.blit(card_text, (card_text_rect))
+            screen.blit(suit_text, (self.rect.x+5, self.rect.y+5))
         
         # Card backing
         else:
             red_bg = pygame.Rect(self.rect.x, self.rect.y, 60, 90)
-            pygame.draw.rect(self.screen, RED, red_bg, 0, 10)
+            pygame.draw.rect(screen, RED, red_bg, 0, 10)
         
 
     def debug_self(self):
